@@ -104,6 +104,9 @@ export default {
 			animation: {
 				'accordion-down': 'accordion-down 0.2s ease-out',
 				'accordion-up': 'accordion-up 0.2s ease-out'
+			},
+			boxShadow: {
+				'strategic': '0 10px 30px -5px hsl(180 100% 50% / 0.3)'
 			}
 		}
 	},
