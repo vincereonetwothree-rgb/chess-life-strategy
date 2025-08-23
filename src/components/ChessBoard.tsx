@@ -1,7 +1,8 @@
+
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Lightbulb, Clock, Target } from "lucide-react";
+import { Lightbulb, Target } from "lucide-react";
 
 interface ChessPiece {
   type: 'king' | 'queen' | 'rook' | 'bishop' | 'knight' | 'pawn';
@@ -13,10 +14,19 @@ interface ChessSquare {
   piece?: ChessPiece;
   isSelected?: boolean;
   isHighlighted?: boolean;
+  isValidMove?: boolean;
+}
+
+interface MoveCard {
+  title: string;
+  description: string;
+  businessConcept: string;
+  riskLevel: 'low' | 'medium' | 'high';
+  reward: 'low' | 'medium' | 'high';
 }
 
 const initialBoard: ChessSquare[][] = [
-  // Initial chess position
+  // Black pieces
   [
     { piece: { type: 'rook', color: 'black', symbol: '♜' } },
     { piece: { type: 'knight', color: 'black', symbol: '♞' } },
@@ -27,13 +37,9 @@ const initialBoard: ChessSquare[][] = [
     { piece: { type: 'knight', color: 'black', symbol: '♞' } },
     { piece: { type: 'rook', color: 'black', symbol: '♜' } }
   ],
-  // Pawns row
   Array(8).fill(0).map(() => ({ piece: { type: 'pawn', color: 'black', symbol: '♟' } })),
-  // Empty rows
   ...Array(4).fill(0).map(() => Array(8).fill({})),
-  // White pawns
   Array(8).fill(0).map(() => ({ piece: { type: 'pawn', color: 'white', symbol: '♙' } })),
-  // White pieces
   [
     { piece: { type: 'rook', color: 'white', symbol: '♖' } },
     { piece: { type: 'knight', color: 'white', symbol: '♘' } },
@@ -46,105 +52,279 @@ const initialBoard: ChessSquare[][] = [
   ]
 ];
 
+const moveCards: Record<string, MoveCard> = {
+  pawn: {
+    title: "Foundation Building",
+    description: "Small, consistent steps forward. Like saving $50 monthly - modest but builds discipline.",
+    businessConcept: "Incremental Progress",
+    riskLevel: "low",
+    reward: "low"
+  },
+  knight: {
+    title: "Creative Problem Solving", 
+    description: "Think outside the box. Sometimes unconventional approaches yield the best results.",
+    businessConcept: "Innovation Strategy",
+    riskLevel: "medium",
+    reward: "high"
+  },
+  bishop: {
+    title: "Long-term Vision",
+    description: "Focus on diagonal growth - specialization in your chosen field over time.",
+    businessConcept: "Strategic Focus",
+    riskLevel: "low",
+    reward: "medium"
+  },
+  rook: {
+    title: "Direct Action",
+    description: "Straight-line power moves. Bold decisions that cut through complexity.",
+    businessConcept: "Decisive Leadership",
+    riskLevel: "medium",
+    reward: "high"
+  },
+  queen: {
+    title: "Maximum Leverage",
+    description: "Your most valuable asset. Use it wisely - represents your peak skill or network.",
+    businessConcept: "Core Competency",
+    riskLevel: "high",
+    reward: "high"
+  },
+  king: {
+    title: "Personal Security",
+    description: "Protect your foundation - emergency fund, health, core relationships.",
+    businessConcept: "Risk Management",
+    riskLevel: "low",
+    reward: "medium"
+  }
+};
+
 export function ChessBoard() {
   const [board, setBoard] = useState<ChessSquare[][]>(initialBoard);
   const [selectedSquare, setSelectedSquare] = useState<[number, number] | null>(null);
-  const [showDecisionOverlay, setShowDecisionOverlay] = useState(false);
+  const [validMoves, setValidMoves] = useState<[number, number][]>([]);
+  const [currentMove, setCurrentMove] = useState<MoveCard | null>(null);
+  const [currentTurn, setCurrentTurn] = useState<'white' | 'black'>('white');
 
-  const handleSquareClick = (row: number, col: number) => {
-    if (selectedSquare) {
-      // Move piece logic would go here
-      setSelectedSquare(null);
-      setShowDecisionOverlay(true);
-    } else if (board[row][col].piece) {
-      setSelectedSquare([row, col]);
+  const getValidMoves = (row: number, col: number, piece: ChessPiece): [number, number][] => {
+    const moves: [number, number][] = [];
+    
+    switch (piece.type) {
+      case 'pawn':
+        const direction = piece.color === 'white' ? -1 : 1;
+        const startRow = piece.color === 'white' ? 6 : 1;
+        
+        // Forward move
+        if (row + direction >= 0 && row + direction < 8 && !board[row + direction][col].piece) {
+          moves.push([row + direction, col]);
+          
+          // Double move from start
+          if (row === startRow && !board[row + 2 * direction][col].piece) {
+            moves.push([row + 2 * direction, col]);
+          }
+        }
+        
+        // Captures
+        if (col > 0 && board[row + direction] && board[row + direction][col - 1].piece?.color !== piece.color) {
+          moves.push([row + direction, col - 1]);
+        }
+        if (col < 7 && board[row + direction] && board[row + direction][col + 1].piece?.color !== piece.color) {
+          moves.push([row + direction, col + 1]);
+        }
+        break;
+        
+      case 'rook':
+        // Horizontal and vertical moves
+        const directions = [[0, 1], [0, -1], [1, 0], [-1, 0]];
+        for (const [dr, dc] of directions) {
+          for (let i = 1; i < 8; i++) {
+            const newRow = row + dr * i;
+            const newCol = col + dc * i;
+            if (newRow < 0 || newRow >= 8 || newCol < 0 || newCol >= 8) break;
+            
+            const targetPiece = board[newRow][newCol].piece;
+            if (!targetPiece) {
+              moves.push([newRow, newCol]);
+            } else {
+              if (targetPiece.color !== piece.color) {
+                moves.push([newRow, newCol]);
+              }
+              break;
+            }
+          }
+        }
+        break;
+        
+      case 'knight':
+        const knightMoves = [[-2, -1], [-2, 1], [-1, -2], [-1, 2], [1, -2], [1, 2], [2, -1], [2, 1]];
+        for (const [dr, dc] of knightMoves) {
+          const newRow = row + dr;
+          const newCol = col + dc;
+          if (newRow >= 0 && newRow < 8 && newCol >= 0 && newCol < 8) {
+            const targetPiece = board[newRow][newCol].piece;
+            if (!targetPiece || targetPiece.color !== piece.color) {
+              moves.push([newRow, newCol]);
+            }
+          }
+        }
+        break;
+        
+      case 'bishop':
+        const diagonals = [[1, 1], [1, -1], [-1, 1], [-1, -1]];
+        for (const [dr, dc] of diagonals) {
+          for (let i = 1; i < 8; i++) {
+            const newRow = row + dr * i;
+            const newCol = col + dc * i;
+            if (newRow < 0 || newRow >= 8 || newCol < 0 || newCol >= 8) break;
+            
+            const targetPiece = board[newRow][newCol].piece;
+            if (!targetPiece) {
+              moves.push([newRow, newCol]);
+            } else {
+              if (targetPiece.color !== piece.color) {
+                moves.push([newRow, newCol]);
+              }
+              break;
+            }
+          }
+        }
+        break;
+        
+      case 'queen':
+        // Combination of rook and bishop moves
+        const queenDirections = [[0, 1], [0, -1], [1, 0], [-1, 0], [1, 1], [1, -1], [-1, 1], [-1, -1]];
+        for (const [dr, dc] of queenDirections) {
+          for (let i = 1; i < 8; i++) {
+            const newRow = row + dr * i;
+            const newCol = col + dc * i;
+            if (newRow < 0 || newRow >= 8 || newCol < 0 || newCol >= 8) break;
+            
+            const targetPiece = board[newRow][newCol].piece;
+            if (!targetPiece) {
+              moves.push([newRow, newCol]);
+            } else {
+              if (targetPiece.color !== piece.color) {
+                moves.push([newRow, newCol]);
+              }
+              break;
+            }
+          }
+        }
+        break;
+        
+      case 'king':
+        const kingMoves = [[-1, -1], [-1, 0], [-1, 1], [0, -1], [0, 1], [1, -1], [1, 0], [1, 1]];
+        for (const [dr, dc] of kingMoves) {
+          const newRow = row + dr;
+          const newCol = col + dc;
+          if (newRow >= 0 && newRow < 8 && newCol >= 0 && newCol < 8) {
+            const targetPiece = board[newRow][newCol].piece;
+            if (!targetPiece || targetPiece.color !== piece.color) {
+              moves.push([newRow, newCol]);
+            }
+          }
+        }
+        break;
     }
+    
+    return moves;
   };
 
-  const isSquareSelected = (row: number, col: number) => {
-    return selectedSquare && selectedSquare[0] === row && selectedSquare[1] === col;
+  const handleSquareClick = (row: number, col: number) => {
+    const clickedSquare = board[row][col];
+    
+    if (selectedSquare) {
+      const [selectedRow, selectedCol] = selectedSquare;
+      const selectedPiece = board[selectedRow][selectedCol].piece;
+      
+      // Check if this is a valid move
+      const isValidMove = validMoves.some(([r, c]) => r === row && c === col);
+      
+      if (isValidMove && selectedPiece) {
+        // Make the move
+        const newBoard = board.map(row => row.map(square => ({ ...square, isSelected: false, isValidMove: false })));
+        newBoard[row][col] = { piece: selectedPiece };
+        newBoard[selectedRow][selectedCol] = {};
+        
+        setBoard(newBoard);
+        setCurrentMove(moveCards[selectedPiece.type]);
+        setCurrentTurn(currentTurn === 'white' ? 'black' : 'white');
+      }
+      
+      setSelectedSquare(null);
+      setValidMoves([]);
+    } else if (clickedSquare.piece && clickedSquare.piece.color === currentTurn) {
+      // Select piece and show valid moves
+      setSelectedSquare([row, col]);
+      const moves = getValidMoves(row, col, clickedSquare.piece);
+      setValidMoves(moves);
+      
+      // Update board to show selection and valid moves
+      const newBoard = board.map((boardRow, r) => 
+        boardRow.map((square, c) => ({
+          ...square,
+          isSelected: r === row && c === col,
+          isValidMove: moves.some(([mr, mc]) => mr === r && mc === c)
+        }))
+      );
+      setBoard(newBoard);
+    }
   };
 
   const isLightSquare = (row: number, col: number) => {
     return (row + col) % 2 === 0;
   };
 
+  const getRiskColor = (level: string) => {
+    switch (level) {
+      case 'low': return 'text-success';
+      case 'medium': return 'text-warning';
+      case 'high': return 'text-destructive';
+      default: return 'text-muted-foreground';
+    }
+  };
+
   return (
-    <div className="flex flex-col lg:flex-row gap-6 max-w-7xl mx-auto p-6">
-      {/* Game Stats Sidebar */}
-      <Card className="lg:w-64 p-6 strategy-card">
-        <div className="space-y-6">
-          <div className="text-center">
-            <div className="flex items-center justify-center mb-2">
-              <Clock className="w-5 h-5 text-primary mr-2" />
-              <span className="text-sm text-muted-foreground">Turn Counter</span>
-            </div>
-            <div className="text-3xl font-bold text-primary">5</div>
-            <div className="text-sm text-muted-foreground">of 12 turns</div>
-          </div>
-
-          <div className="space-y-3">
-            <div className="flex items-center justify-between">
-              <span className="text-sm">Session Progress</span>
-              <span className="text-sm text-primary">42%</span>
-            </div>
-            <div className="progress-strategic w-full">
-              <div className="h-full w-[42%] rounded-full"></div>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-2 gap-3 text-center">
-            <div>
-              <div className="text-lg font-semibold text-success">6</div>
-              <div className="text-xs text-muted-foreground">Good Moves</div>
-            </div>
-            <div>
-              <div className="text-lg font-semibold text-warning">2</div>
-              <div className="text-xs text-muted-foreground">Poor Moves</div>
-            </div>
-          </div>
-
-          <Button 
-            variant="outline" 
-            className="w-full border-primary/30 hover:border-primary text-primary"
-            onClick={() => setShowDecisionOverlay(true)}
-          >
-            <Lightbulb className="w-4 h-4 mr-2" />
-            Get Hint
-          </Button>
-        </div>
-      </Card>
-
+    <div className="flex flex-col lg:flex-row gap-6 max-w-6xl mx-auto p-4">
       {/* Chess Board */}
       <div className="flex-1">
         <Card className="p-6 strategy-card">
           <div className="mb-4">
             <h2 className="text-xl font-bold mb-2">Strategic Decision Point</h2>
-            <p className="text-muted-foreground text-sm">
-              Your company faces a critical market expansion opportunity. The board expects decisive leadership.
+            <p className="text-sm text-muted-foreground mb-2">
+              Current Turn: <span className={`font-semibold ${currentTurn === 'white' ? 'text-primary' : 'text-warning'}`}>
+                {currentTurn === 'white' ? 'White (You)' : 'Black (AI)'}
+              </span>
             </p>
           </div>
 
-          <div className="grid grid-cols-8 gap-1 bg-muted/20 p-4 rounded-lg max-w-md mx-auto">
+          <div className="grid grid-cols-8 gap-0 bg-muted/20 p-4 rounded-lg max-w-lg mx-auto border-2 border-primary/20">
             {board.map((row, rowIndex) =>
               row.map((square, colIndex) => (
                 <div
                   key={`${rowIndex}-${colIndex}`}
                   onClick={() => handleSquareClick(rowIndex, colIndex)}
                   className={`
-                    chess-square w-12 h-12 flex items-center justify-center text-2xl cursor-pointer relative
+                    relative w-14 h-14 flex items-center justify-center text-3xl cursor-pointer transition-all duration-200
                     ${isLightSquare(rowIndex, colIndex) ? 'bg-chess-light' : 'bg-chess-dark'}
-                    ${isSquareSelected(rowIndex, colIndex) ? 'bg-chess-selected' : ''}
+                    ${square.isSelected ? 'bg-chess-selected ring-2 ring-chess-highlight' : ''}
+                    ${square.isValidMove ? 'ring-2 ring-primary/50' : ''}
                     hover:brightness-110
                   `}
                 >
                   {square.piece && (
-                    <span className="chess-piece select-none">
+                    <span className={`
+                      select-none transition-all duration-200 hover:scale-110 drop-shadow-lg
+                      ${square.piece.color === 'white' ? 'text-white filter brightness-110' : 'text-gray-800'}
+                    `}>
                       {square.piece.symbol}
                     </span>
                   )}
-                  {isSquareSelected(rowIndex, colIndex) && (
-                    <div className="absolute inset-0 border-2 border-chess-highlight rounded"></div>
+                  {square.isValidMove && !square.piece && (
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      <div className="w-4 h-4 bg-primary/60 rounded-full"></div>
+                    </div>
+                  )}
+                  {square.isValidMove && square.piece && (
+                    <div className="absolute inset-0 border-4 border-destructive/70 rounded"></div>
                   )}
                 </div>
               ))
@@ -153,71 +333,65 @@ export function ChessBoard() {
         </Card>
       </div>
 
-      {/* Strategic Options Panel */}
-      <Card className="lg:w-80 p-6 strategy-card">
-        <h3 className="text-lg font-semibold mb-4 flex items-center">
-          <Target className="w-5 h-5 mr-2 text-primary" />
-          Strategic Options
-        </h3>
-        
-        <div className="space-y-4">
-          <div className="p-4 rounded-lg border border-primary/20 bg-primary/5 hover:bg-primary/10 transition-colors cursor-pointer">
-            <div className="flex items-center mb-2">
-              <div className="w-3 h-3 rounded-full bg-primary mr-2"></div>
-              <span className="font-medium">Aggressive Expansion</span>
+      {/* Move Decision Card */}
+      <div className="lg:w-80">
+        <Card className="p-6 strategy-card">
+          <h3 className="text-lg font-semibold mb-4 flex items-center">
+            <Target className="w-5 h-5 mr-2 text-primary" />
+            Strategic Analysis
+          </h3>
+          
+          {currentMove ? (
+            <div className="space-y-4">
+              <div>
+                <h4 className="font-semibold text-primary mb-2">{currentMove.title}</h4>
+                <p className="text-sm text-muted-foreground mb-3">{currentMove.description}</p>
+                
+                <div className="flex gap-2 mb-3">
+                  <span className={`px-2 py-1 text-xs rounded ${getRiskColor(currentMove.riskLevel)} bg-current/10`}>
+                    {currentMove.riskLevel.charAt(0).toUpperCase() + currentMove.riskLevel.slice(1)} Risk
+                  </span>
+                  <span className={`px-2 py-1 text-xs rounded ${getRiskColor(currentMove.reward)} bg-current/10`}>
+                    {currentMove.reward.charAt(0).toUpperCase() + currentMove.reward.slice(1)} Reward
+                  </span>
+                </div>
+                
+                <div className="p-3 bg-primary/5 border border-primary/20 rounded-lg">
+                  <span className="text-xs font-medium text-primary">Business Concept:</span>
+                  <p className="text-sm mt-1">{currentMove.businessConcept}</p>
+                </div>
+              </div>
+              
+              <Button 
+                variant="outline" 
+                className="w-full border-primary/30 hover:border-primary text-primary"
+                onClick={() => setCurrentMove(null)}
+              >
+                Continue Playing
+              </Button>
             </div>
-            <p className="text-sm text-muted-foreground mb-2">
-              Launch into three new markets simultaneously with full marketing support.
-            </p>
-            <div className="flex gap-2">
-              <span className="px-2 py-1 bg-destructive/20 text-destructive text-xs rounded">High Risk</span>
-              <span className="px-2 py-1 bg-success/20 text-success text-xs rounded">High Reward</span>
+          ) : (
+            <div className="space-y-4">
+              <div className="text-center py-8">
+                <Lightbulb className="w-12 h-12 mx-auto text-muted-foreground mb-3" />
+                <p className="text-sm text-muted-foreground">
+                  Select a piece and make a move to see the strategic analysis
+                </p>
+              </div>
+              
+              <div className="space-y-2">
+                <h4 className="font-medium text-sm">Quick Tips:</h4>
+                <ul className="text-xs text-muted-foreground space-y-1">
+                  <li>• Click your piece to see possible moves</li>
+                  <li>• Each piece teaches different life strategies</li>
+                  <li>• Green dots = safe moves</li>
+                  <li>• Red borders = capture opportunities</li>
+                </ul>
+              </div>
             </div>
-          </div>
-
-          <div className="p-4 rounded-lg border border-warning/20 bg-warning/5 hover:bg-warning/10 transition-colors cursor-pointer">
-            <div className="flex items-center mb-2">
-              <div className="w-3 h-3 rounded-full bg-warning mr-2"></div>
-              <span className="font-medium">Conservative Growth</span>
-            </div>
-            <p className="text-sm text-muted-foreground mb-2">
-              Focus on one market with thorough research and gradual rollout.
-            </p>
-            <div className="flex gap-2">
-              <span className="px-2 py-1 bg-success/20 text-success text-xs rounded">Low Risk</span>
-              <span className="px-2 py-1 bg-muted/20 text-muted-foreground text-xs rounded">Moderate Reward</span>
-            </div>
-          </div>
-
-          <div className="p-4 rounded-lg border border-accent/20 bg-accent/5 hover:bg-accent/10 transition-colors cursor-pointer">
-            <div className="flex items-center mb-2">
-              <div className="w-3 h-3 rounded-full bg-accent mr-2"></div>
-              <span className="font-medium">Strategic Partnership</span>
-            </div>
-            <p className="text-sm text-muted-foreground mb-2">
-              Form alliances with local companies to share risks and resources.
-            </p>
-            <div className="flex gap-2">
-              <span className="px-2 py-1 bg-accent/20 text-accent text-xs rounded">Medium Risk</span>
-              <span className="px-2 py-1 bg-primary/20 text-primary text-xs rounded">Strategic Value</span>
-            </div>
-          </div>
-
-          <div className="p-4 rounded-lg border border-destructive/20 bg-destructive/5 hover:bg-destructive/10 transition-colors cursor-pointer">
-            <div className="flex items-center mb-2">
-              <div className="w-3 h-3 rounded-full bg-destructive mr-2"></div>
-              <span className="font-medium">Hold Position</span>
-            </div>
-            <p className="text-sm text-muted-foreground mb-2">
-              Delay expansion to strengthen current market position first.
-            </p>
-            <div className="flex gap-2">
-              <span className="px-2 py-1 bg-success/20 text-success text-xs rounded">No Risk</span>
-              <span className="px-2 py-1 bg-destructive/20 text-destructive text-xs rounded">Missed Opportunity</span>
-            </div>
-          </div>
-        </div>
-      </Card>
+          )}
+        </Card>
+      </div>
     </div>
   );
 }
