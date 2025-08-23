@@ -241,8 +241,8 @@ export function ChessBoard() {
       if (isValidMove && selectedPiece) {
         // Make the move
         const newBoard = board.map(row => row.map(square => ({ ...square, isSelected: false, isValidMove: false })));
-        newBoard[row][col] = { piece: selectedPiece };
-        newBoard[selectedRow][selectedCol] = {};
+        newBoard[row][col] = { piece: selectedPiece, isSelected: false, isValidMove: false };
+        newBoard[selectedRow][selectedCol] = { isSelected: false, isValidMove: false };
         
         setBoard(newBoard);
         setCurrentMove(moveCards[selectedPiece.type]);
@@ -310,14 +310,14 @@ export function ChessBoard() {
                     hover:brightness-110
                   `}
                 >
-                  {square.piece && (
+                   {square.piece && (
                     <span className={`
                       select-none transition-all duration-200 hover:scale-110 drop-shadow-lg
-                      ${square.piece.color === 'white' ? 'text-white filter brightness-110' : 'text-gray-800'}
+                      ${square.piece.color === 'white' ? 'text-white filter brightness-110' : 'text-gray-800 filter drop-shadow-md'}
                     `}>
                       {square.piece.symbol}
                     </span>
-                  )}
+                   )}
                   {square.isValidMove && !square.piece && (
                     <div className="absolute inset-0 flex items-center justify-center">
                       <div className="w-4 h-4 bg-primary/60 rounded-full"></div>
