@@ -17,6 +17,29 @@ interface ChessSquare {
   isValidMove?: boolean;
 }
 
+interface GameState {
+  board: ChessSquare[][];
+  currentTurn: 'white' | 'black';
+  castlingRights: {
+    whiteKingSide: boolean;
+    whiteQueenSide: boolean;
+    blackKingSide: boolean;
+    blackQueenSide: boolean;
+  };
+  enPassantTarget: [number, number] | null;
+  kingPositions: {
+    white: [number, number];
+    black: [number, number];
+  };
+  moveHistory: Array<{
+    from: [number, number];
+    to: [number, number];
+    piece: ChessPiece;
+    capturedPiece?: ChessPiece;
+    specialMove?: 'castle' | 'enPassant';
+  }>;
+}
+
 interface MoveCard {
   title: string;
   description: string;
@@ -98,13 +121,44 @@ const moveCards: Record<string, MoveCard> = {
 };
 
 export function ChessBoard() {
-  const [board, setBoard] = useState<ChessSquare[][]>(initialBoard);
+  const [gameState, setGameState] = useState<GameState>({
+    board: initialBoard,
+    currentTurn: 'white',
+    castlingRights: {
+      whiteKingSide: true,
+      whiteQueenSide: true,
+      blackKingSide: true,
+      blackQueenSide: true
+    },
+    enPassantTarget: null,
+    kingPositions: {
+      white: [7, 4],
+      black: [0, 4]
+    },
+    moveHistory: []
+  });
   const [selectedSquare, setSelectedSquare] = useState<[number, number] | null>(null);
   const [validMoves, setValidMoves] = useState<[number, number][]>([]);
   const [currentMove, setCurrentMove] = useState<MoveCard | null>(null);
-  const [currentTurn, setCurrentTurn] = useState<'white' | 'black'>('white');
 
-  const getValidMoves = (row: number, col: number, piece: ChessPiece): [number, number][] => {
+  // Helper function to check if a square is under attack by the opposing color
+  const isSquareUnderAttack = (targetRow: number, targetCol: number, attackingColor: 'white' | 'black', board: ChessSquare[][]) => {
+    for (let row = 0; row < 8; row++) {
+      for (let col = 0; col < 8; col++) {
+        const piece = board[row][col].piece;
+        if (!piece || piece.color !== attackingColor) continue;
+        
+        const attackingMoves = getPseudoLegalMoves(row, col, piece, board);
+        if (attackingMoves.some(([r, c]) => r === targetRow && c === targetCol)) {
+          return true;
+        }
+      }
+    }
+    return false;
+  };
+
+  // Get pseudo-legal moves (without considering check)
+  const getPseudoLegalMoves = (row: number, col: number, piece: ChessPiece, board: ChessSquare[][]): [number, number][] => {
     const moves: [number, number][] = [];
     
     switch (piece.type) {
@@ -123,16 +177,29 @@ export function ChessBoard() {
         }
         
         // Captures
-        if (col > 0 && board[row + direction] && board[row + direction][col - 1].piece?.color !== piece.color) {
-          moves.push([row + direction, col - 1]);
+        if (col > 0 && row + direction >= 0 && row + direction < 8) {
+          const targetPiece = board[row + direction][col - 1].piece;
+          if (targetPiece && targetPiece.color !== piece.color) {
+            moves.push([row + direction, col - 1]);
+          }
         }
-        if (col < 7 && board[row + direction] && board[row + direction][col + 1].piece?.color !== piece.color) {
-          moves.push([row + direction, col + 1]);
+        if (col < 7 && row + direction >= 0 && row + direction < 8) {
+          const targetPiece = board[row + direction][col + 1].piece;
+          if (targetPiece && targetPiece.color !== piece.color) {
+            moves.push([row + direction, col + 1]);
+          }
+        }
+        
+        // En passant
+        if (gameState.enPassantTarget) {
+          const [enPassantRow, enPassantCol] = gameState.enPassantTarget;
+          if (row + direction === enPassantRow && Math.abs(col - enPassantCol) === 1) {
+            moves.push([enPassantRow, enPassantCol]);
+          }
         }
         break;
         
       case 'rook':
-        // Horizontal and vertical moves
         const directions = [[0, 1], [0, -1], [1, 0], [-1, 0]];
         for (const [dr, dc] of directions) {
           for (let i = 1; i < 8; i++) {
@@ -189,7 +256,6 @@ export function ChessBoard() {
         break;
         
       case 'queen':
-        // Combination of rook and bishop moves
         const queenDirections = [[0, 1], [0, -1], [1, 0], [-1, 0], [1, 1], [1, -1], [-1, 1], [-1, -1]];
         for (const [dr, dc] of queenDirections) {
           for (let i = 1; i < 8; i++) {
@@ -222,50 +288,180 @@ export function ChessBoard() {
             }
           }
         }
+        
+        // Castling
+        if (piece.color === 'white' && row === 7 && col === 4) {
+          // White king-side castling
+          if (gameState.castlingRights.whiteKingSide && 
+              !board[7][5].piece && !board[7][6].piece &&
+              !isSquareUnderAttack(7, 4, 'black', board) &&
+              !isSquareUnderAttack(7, 5, 'black', board) &&
+              !isSquareUnderAttack(7, 6, 'black', board)) {
+            moves.push([7, 6]);
+          }
+          // White queen-side castling
+          if (gameState.castlingRights.whiteQueenSide && 
+              !board[7][3].piece && !board[7][2].piece && !board[7][1].piece &&
+              !isSquareUnderAttack(7, 4, 'black', board) &&
+              !isSquareUnderAttack(7, 3, 'black', board) &&
+              !isSquareUnderAttack(7, 2, 'black', board)) {
+            moves.push([7, 2]);
+          }
+        } else if (piece.color === 'black' && row === 0 && col === 4) {
+          // Black king-side castling
+          if (gameState.castlingRights.blackKingSide && 
+              !board[0][5].piece && !board[0][6].piece &&
+              !isSquareUnderAttack(0, 4, 'white', board) &&
+              !isSquareUnderAttack(0, 5, 'white', board) &&
+              !isSquareUnderAttack(0, 6, 'white', board)) {
+            moves.push([0, 6]);
+          }
+          // Black queen-side castling
+          if (gameState.castlingRights.blackQueenSide && 
+              !board[0][3].piece && !board[0][2].piece && !board[0][1].piece &&
+              !isSquareUnderAttack(0, 4, 'white', board) &&
+              !isSquareUnderAttack(0, 3, 'white', board) &&
+              !isSquareUnderAttack(0, 2, 'white', board)) {
+            moves.push([0, 2]);
+          }
+        }
         break;
     }
     
     return moves;
   };
 
+  // Get legal moves (pseudo-legal moves that don't leave king in check)
+  const getValidMoves = (row: number, col: number, piece: ChessPiece): [number, number][] => {
+    const pseudoMoves = getPseudoLegalMoves(row, col, piece, gameState.board);
+    const legalMoves: [number, number][] = [];
+
+    for (const [toRow, toCol] of pseudoMoves) {
+      // Simulate the move
+      const newBoard = gameState.board.map(row => row.map(square => ({ ...square })));
+      const capturedPiece = newBoard[toRow][toCol].piece;
+      newBoard[toRow][toCol] = { piece };
+      newBoard[row][col] = {};
+
+      // Check if this move leaves the king in check
+      const kingPos = piece.type === 'king' ? [toRow, toCol] : gameState.kingPositions[piece.color];
+      const [kingRow, kingCol] = kingPos as [number, number];
+      
+      if (!isSquareUnderAttack(kingRow, kingCol, piece.color === 'white' ? 'black' : 'white', newBoard)) {
+        legalMoves.push([toRow, toCol]);
+      }
+    }
+
+    return legalMoves;
+  };
+
   const handleSquareClick = (row: number, col: number) => {
-    const clickedSquare = board[row][col];
+    const clickedSquare = gameState.board[row][col];
     
     if (selectedSquare) {
       const [selectedRow, selectedCol] = selectedSquare;
-      const selectedPiece = board[selectedRow][selectedCol].piece;
+      const selectedPiece = gameState.board[selectedRow][selectedCol].piece;
       
       // Check if this is a valid move
       const isValidMove = validMoves.some(([r, c]) => r === row && c === col);
       
       if (isValidMove && selectedPiece) {
         // Make the move
-        const newBoard = board.map(row => row.map(square => ({ ...square, isSelected: false, isValidMove: false })));
-        newBoard[row][col] = { piece: selectedPiece, isSelected: false, isValidMove: false };
-        newBoard[selectedRow][selectedCol] = { isSelected: false, isValidMove: false };
+        const newBoard = gameState.board.map(row => row.map(square => ({ ...square, isSelected: false, isValidMove: false })));
+        const capturedPiece = newBoard[row][col].piece;
         
-        setBoard(newBoard);
+        // Handle special moves
+        let specialMove: 'castle' | 'enPassant' | undefined;
+        let newEnPassantTarget: [number, number] | null = null;
+        let newCastlingRights = { ...gameState.castlingRights };
+        let newKingPositions = { ...gameState.kingPositions };
+        
+        // Check for castling
+        if (selectedPiece.type === 'king' && Math.abs(selectedCol - col) === 2) {
+          specialMove = 'castle';
+          const rookCol = col > selectedCol ? 7 : 0;
+          const newRookCol = col > selectedCol ? 5 : 3;
+          const rook = newBoard[row][rookCol].piece;
+          newBoard[row][newRookCol] = { piece: rook };
+          newBoard[row][rookCol] = {};
+        }
+        
+        // Check for en passant
+        if (selectedPiece.type === 'pawn' && gameState.enPassantTarget && 
+            row === gameState.enPassantTarget[0] && col === gameState.enPassantTarget[1]) {
+          specialMove = 'enPassant';
+          const captureRow = selectedPiece.color === 'white' ? row + 1 : row - 1;
+          newBoard[captureRow][col] = {};
+        }
+        
+        // Check for pawn double move to set en passant target
+        if (selectedPiece.type === 'pawn' && Math.abs(selectedRow - row) === 2) {
+          newEnPassantTarget = [selectedRow + (row - selectedRow) / 2, col];
+        }
+        
+        // Update castling rights
+        if (selectedPiece.type === 'king') {
+          if (selectedPiece.color === 'white') {
+            newCastlingRights.whiteKingSide = false;
+            newCastlingRights.whiteQueenSide = false;
+            newKingPositions.white = [row, col];
+          } else {
+            newCastlingRights.blackKingSide = false;
+            newCastlingRights.blackQueenSide = false;
+            newKingPositions.black = [row, col];
+          }
+        }
+        
+        // Update castling rights if rook moves
+        if (selectedPiece.type === 'rook') {
+          if (selectedPiece.color === 'white') {
+            if (selectedRow === 7 && selectedCol === 0) newCastlingRights.whiteQueenSide = false;
+            if (selectedRow === 7 && selectedCol === 7) newCastlingRights.whiteKingSide = false;
+          } else {
+            if (selectedRow === 0 && selectedCol === 0) newCastlingRights.blackQueenSide = false;
+            if (selectedRow === 0 && selectedCol === 7) newCastlingRights.blackKingSide = false;
+          }
+        }
+        
+        newBoard[row][col] = { piece: selectedPiece };
+        newBoard[selectedRow][selectedCol] = {};
+        
+        setGameState({
+          ...gameState,
+          board: newBoard,
+          currentTurn: gameState.currentTurn === 'white' ? 'black' : 'white',
+          castlingRights: newCastlingRights,
+          enPassantTarget: newEnPassantTarget,
+          kingPositions: newKingPositions,
+          moveHistory: [...gameState.moveHistory, {
+            from: [selectedRow, selectedCol],
+            to: [row, col],
+            piece: selectedPiece,
+            capturedPiece,
+            specialMove
+          }]
+        });
+        
         setCurrentMove(moveCards[selectedPiece.type]);
-        setCurrentTurn(currentTurn === 'white' ? 'black' : 'white');
       }
       
       setSelectedSquare(null);
       setValidMoves([]);
-    } else if (clickedSquare.piece && clickedSquare.piece.color === currentTurn) {
+    } else if (clickedSquare.piece && clickedSquare.piece.color === gameState.currentTurn) {
       // Select piece and show valid moves
       setSelectedSquare([row, col]);
       const moves = getValidMoves(row, col, clickedSquare.piece);
       setValidMoves(moves);
       
       // Update board to show selection and valid moves
-      const newBoard = board.map((boardRow, r) => 
+      const newBoard = gameState.board.map((boardRow, r) => 
         boardRow.map((square, c) => ({
           ...square,
           isSelected: r === row && c === col,
           isValidMove: moves.some(([mr, mc]) => mr === r && mc === c)
         }))
       );
-      setBoard(newBoard);
+      setGameState({ ...gameState, board: newBoard });
     }
   };
 
@@ -290,26 +486,28 @@ export function ChessBoard() {
           <div className="mb-4">
             <h2 className="text-xl font-bold mb-2">Strategic Decision Point</h2>
             <p className="text-sm text-muted-foreground mb-2">
-              Current Turn: <span className={`font-semibold ${currentTurn === 'white' ? 'text-primary' : 'text-warning'}`}>
-                {currentTurn === 'white' ? 'White (You)' : 'Black (AI)'}
+              Current Turn: <span className={`font-semibold ${gameState.currentTurn === 'white' ? 'text-primary' : 'text-warning'}`}>
+                {gameState.currentTurn === 'white' ? 'White (You)' : 'Black (AI)'}
               </span>
             </p>
           </div>
 
-          <div className="grid grid-cols-8 gap-0 bg-muted/20 p-4 rounded-lg max-w-lg mx-auto border-2 border-primary/20">
-            {board.map((row, rowIndex) =>
-              row.map((square, colIndex) => (
-                <div
-                  key={`${rowIndex}-${colIndex}`}
-                  onClick={() => handleSquareClick(rowIndex, colIndex)}
-                  className={`
-                    relative w-14 h-14 flex items-center justify-center text-3xl cursor-pointer transition-all duration-200
-                    ${isLightSquare(rowIndex, colIndex) ? 'bg-chess-light' : 'bg-chess-dark'}
-                    ${square.isSelected ? 'bg-chess-selected ring-2 ring-chess-highlight' : ''}
-                    ${square.isValidMove ? 'ring-2 ring-primary/50' : ''}
-                    hover:brightness-110
-                  `}
-                >
+          <div className="bg-muted/20 p-4 rounded-lg max-w-lg mx-auto border-2 border-primary/20">
+            <div className="grid grid-cols-8 gap-0 border-2 border-border/50 rounded-md overflow-hidden">
+              {gameState.board.map((row, rowIndex) =>
+                row.map((square, colIndex) => (
+                  <div
+                    key={`${rowIndex}-${colIndex}`}
+                    onClick={() => handleSquareClick(rowIndex, colIndex)}
+                    className={`
+                      relative w-14 h-14 flex items-center justify-center text-3xl cursor-pointer transition-all duration-200
+                      border border-border/30
+                      ${isLightSquare(rowIndex, colIndex) ? 'bg-slate-200' : 'bg-slate-700'}
+                      ${square.isSelected ? 'bg-chess-selected ring-2 ring-chess-highlight' : ''}
+                      ${square.isValidMove ? 'ring-2 ring-primary/50' : ''}
+                      hover:brightness-110
+                    `}
+                  >
                    {square.piece && (
                     <span className={`
                       select-none transition-all duration-200 hover:scale-110 drop-shadow-lg
@@ -326,9 +524,10 @@ export function ChessBoard() {
                   {square.isValidMove && square.piece && (
                     <div className="absolute inset-0 border-4 border-destructive/70 rounded"></div>
                   )}
-                </div>
-              ))
-            )}
+                  </div>
+                ))
+              )}
+            </div>
           </div>
         </Card>
       </div>
