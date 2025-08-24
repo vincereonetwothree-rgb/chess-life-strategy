@@ -340,8 +340,8 @@ export function ChessBoard() {
       // Simulate the move
       const newBoard = gameState.board.map(row => row.map(square => ({ ...square })));
       const capturedPiece = newBoard[toRow][toCol].piece;
-      newBoard[toRow][toCol] = { piece };
-      newBoard[row][col] = {};
+      newBoard[toRow][toCol] = { piece, isSelected: false, isValidMove: false };
+      newBoard[row][col] = { isSelected: false, isValidMove: false };
 
       // Check if this move leaves the king in check
       const kingPos = piece.type === 'king' ? [toRow, toCol] : gameState.kingPositions[piece.color];
@@ -382,8 +382,8 @@ export function ChessBoard() {
           const rookCol = col > selectedCol ? 7 : 0;
           const newRookCol = col > selectedCol ? 5 : 3;
           const rook = newBoard[row][rookCol].piece;
-          newBoard[row][newRookCol] = { piece: rook };
-          newBoard[row][rookCol] = {};
+          newBoard[row][newRookCol] = { piece: rook, isSelected: false, isValidMove: false };
+          newBoard[row][rookCol] = { isSelected: false, isValidMove: false };
         }
         
         // Check for en passant
@@ -391,7 +391,7 @@ export function ChessBoard() {
             row === gameState.enPassantTarget[0] && col === gameState.enPassantTarget[1]) {
           specialMove = 'enPassant';
           const captureRow = selectedPiece.color === 'white' ? row + 1 : row - 1;
-          newBoard[captureRow][col] = {};
+          newBoard[captureRow][col] = { isSelected: false, isValidMove: false };
         }
         
         // Check for pawn double move to set en passant target
@@ -423,8 +423,8 @@ export function ChessBoard() {
           }
         }
         
-        newBoard[row][col] = { piece: selectedPiece };
-        newBoard[selectedRow][selectedCol] = {};
+        newBoard[row][col] = { piece: selectedPiece, isSelected: false, isValidMove: false };
+        newBoard[selectedRow][selectedCol] = { isSelected: false, isValidMove: false };
         
         setGameState({
           ...gameState,
@@ -494,22 +494,10 @@ export function ChessBoard() {
 
           <div className="flex justify-center items-center p-8">
             <div className="relative">
-              {/* Board Container with Elegant Shadow */}
-              <div className="relative bg-gradient-to-br from-amber-50 to-amber-100 p-4 rounded-2xl shadow-2xl border border-amber-200/50">
-                {/* Coordinate Labels */}
-                <div className="absolute -left-6 top-4 bottom-4 flex flex-col justify-around text-sm font-semibold text-amber-800">
-                  {['8', '7', '6', '5', '4', '3', '2', '1'].map(rank => (
-                    <div key={rank} className="flex items-center justify-center w-4 h-14">{rank}</div>
-                  ))}
-                </div>
-                <div className="absolute -bottom-6 left-4 right-4 flex justify-around text-sm font-semibold text-amber-800">
-                  {['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'].map(file => (
-                    <div key={file} className="flex items-center justify-center w-14 h-4">{file}</div>
-                  ))}
-                </div>
-                
+              {/* Dark Chess Board Container */}
+              <div className="relative bg-gray-900 p-4 rounded-2xl shadow-2xl border-2 border-cyan-400/50">
                 {/* Chess Board */}
-                <div className="grid grid-cols-8 gap-0 rounded-lg overflow-hidden shadow-inner border-2 border-amber-300/30">
+                <div className="grid grid-cols-8 gap-0 rounded-lg overflow-hidden border-2 border-cyan-400/30">
                   {gameState.board.map((row, rowIndex) =>
                     row.map((square, colIndex) => (
                       <div
@@ -519,32 +507,30 @@ export function ChessBoard() {
                           relative w-16 h-16 flex items-center justify-center text-4xl cursor-pointer transition-all duration-300 ease-out
                           ${
                             isLightSquare(rowIndex, colIndex) 
-                              ? 'bg-gradient-to-br from-amber-50 to-amber-100 hover:from-amber-100 hover:to-amber-200' 
-                              : 'bg-gradient-to-br from-amber-700 to-amber-800 hover:from-amber-600 hover:to-amber-700'
+                              ? 'bg-gray-600 hover:bg-gray-500' 
+                              : 'bg-gray-800 hover:bg-gray-700'
                           }
-                          ${square.isSelected ? 'ring-4 ring-blue-400/70 ring-inset shadow-lg bg-gradient-to-br from-blue-200 to-blue-300' : ''}
-                          ${square.isValidMove ? 'ring-2 ring-green-400/60 ring-inset' : ''}
-                          hover:scale-105 hover:shadow-lg hover:z-10 relative
-                          border border-amber-200/30
+                          ${square.isSelected ? 'bg-cyan-500/30 ring-2 ring-cyan-400 shadow-lg shadow-cyan-400/50' : ''}
+                          ${square.isValidMove ? 'ring-2 ring-cyan-400/60 shadow-md shadow-cyan-400/30' : ''}
+                          hover:shadow-lg hover:shadow-cyan-400/20 relative
                         `}
                         style={{
-                          transform: square.isSelected ? 'scale(1.05)' : 'scale(1)',
-                          boxShadow: square.isSelected ? '0 8px 25px rgba(59, 130, 246, 0.3)' : undefined
+                          boxShadow: square.isSelected ? '0 0 20px rgba(34, 211, 238, 0.6), inset 0 0 20px rgba(34, 211, 238, 0.2)' : undefined
                         }}
                       >
                         {square.piece && (
                           <span className={`
-                            select-none transition-all duration-300 hover:scale-110 relative z-10
+                            select-none transition-all duration-300 hover:scale-110 relative z-10 font-bold
                             ${square.piece.color === 'white' 
-                              ? 'text-white drop-shadow-[2px_2px_4px_rgba(0,0,0,0.8)] hover:drop-shadow-[3px_3px_6px_rgba(0,0,0,0.9)]' 
-                              : 'text-gray-900 drop-shadow-[2px_2px_4px_rgba(255,255,255,0.8)] hover:drop-shadow-[3px_3px_6px_rgba(255,255,255,0.9)]'
+                              ? 'text-white drop-shadow-[0_0_8px_rgba(255,255,255,0.8)] hover:drop-shadow-[0_0_12px_rgba(255,255,255,1)]' 
+                              : 'text-cyan-400 drop-shadow-[0_0_8px_rgba(34,211,238,0.8)] hover:drop-shadow-[0_0_12px_rgba(34,211,238,1)]'
                             }
                             hover:brightness-110 filter
                           `}
                           style={{
                             textShadow: square.piece.color === 'white' 
-                              ? '2px 2px 0px #000, -2px -2px 0px #000, 2px -2px 0px #000, -2px 2px 0px #000'
-                              : '1px 1px 0px #fff, -1px -1px 0px #fff, 1px -1px 0px #fff, -1px 1px 0px #fff'
+                              ? '0 0 10px rgba(255,255,255,0.8), 2px 2px 0px #000, -2px -2px 0px #000, 2px -2px 0px #000, -2px 2px 0px #000'
+                              : '0 0 10px rgba(34,211,238,0.8), 2px 2px 0px #000, -2px -2px 0px #000, 2px -2px 0px #000, -2px 2px 0px #000'
                           }}
                         >
                           {square.piece.symbol}
@@ -553,11 +539,15 @@ export function ChessBoard() {
                         {/* Move Indicators */}
                         {square.isValidMove && !square.piece && (
                           <div className="absolute inset-0 flex items-center justify-center">
-                            <div className="w-5 h-5 bg-green-500/70 rounded-full border-2 border-green-400 shadow-lg animate-pulse"></div>
+                            <div className="w-4 h-4 bg-cyan-400/70 rounded-full border-2 border-cyan-300 shadow-lg animate-pulse" style={{
+                              boxShadow: '0 0 10px rgba(34, 211, 238, 0.6)'
+                            }}></div>
                           </div>
                         )}
                         {square.isValidMove && square.piece && (
-                          <div className="absolute inset-0 rounded border-4 border-red-500/80 shadow-lg animate-pulse"></div>
+                          <div className="absolute inset-0 rounded border-3 border-cyan-400/80 animate-pulse" style={{
+                            boxShadow: '0 0 15px rgba(34, 211, 238, 0.8), inset 0 0 15px rgba(34, 211, 238, 0.3)'
+                          }}></div>
                         )}
                       </div>
                     ))
