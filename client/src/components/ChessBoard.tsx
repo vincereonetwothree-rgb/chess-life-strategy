@@ -492,41 +492,78 @@ export function ChessBoard() {
             </p>
           </div>
 
-          <div className="bg-muted/20 p-4 rounded-lg max-w-lg mx-auto border-2 border-primary/20">
-            <div className="grid grid-cols-8 gap-0 border-2 border-border/50 rounded-md overflow-hidden">
-              {gameState.board.map((row, rowIndex) =>
-                row.map((square, colIndex) => (
-                  <div
-                    key={`${rowIndex}-${colIndex}`}
-                    onClick={() => handleSquareClick(rowIndex, colIndex)}
-                    className={`
-                      relative w-14 h-14 flex items-center justify-center text-3xl cursor-pointer transition-all duration-200
-                      border border-border/30
-                      ${isLightSquare(rowIndex, colIndex) ? 'bg-slate-200' : 'bg-slate-700'}
-                      ${square.isSelected ? 'bg-chess-selected ring-2 ring-chess-highlight' : ''}
-                      ${square.isValidMove ? 'ring-2 ring-primary/50' : ''}
-                      hover:brightness-110
-                    `}
-                  >
-                   {square.piece && (
-                    <span className={`
-                      select-none transition-all duration-200 hover:scale-110 drop-shadow-lg
-                      ${square.piece.color === 'white' ? 'text-white filter brightness-110' : 'text-gray-800 filter drop-shadow-md'}
-                    `}>
-                      {square.piece.symbol}
-                    </span>
-                   )}
-                  {square.isValidMove && !square.piece && (
-                    <div className="absolute inset-0 flex items-center justify-center">
-                      <div className="w-4 h-4 bg-primary/60 rounded-full"></div>
-                    </div>
+          <div className="flex justify-center items-center p-8">
+            <div className="relative">
+              {/* Board Container with Elegant Shadow */}
+              <div className="relative bg-gradient-to-br from-amber-50 to-amber-100 p-4 rounded-2xl shadow-2xl border border-amber-200/50">
+                {/* Coordinate Labels */}
+                <div className="absolute -left-6 top-4 bottom-4 flex flex-col justify-around text-sm font-semibold text-amber-800">
+                  {['8', '7', '6', '5', '4', '3', '2', '1'].map(rank => (
+                    <div key={rank} className="flex items-center justify-center w-4 h-14">{rank}</div>
+                  ))}
+                </div>
+                <div className="absolute -bottom-6 left-4 right-4 flex justify-around text-sm font-semibold text-amber-800">
+                  {['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'].map(file => (
+                    <div key={file} className="flex items-center justify-center w-14 h-4">{file}</div>
+                  ))}
+                </div>
+                
+                {/* Chess Board */}
+                <div className="grid grid-cols-8 gap-0 rounded-lg overflow-hidden shadow-inner border-2 border-amber-300/30">
+                  {gameState.board.map((row, rowIndex) =>
+                    row.map((square, colIndex) => (
+                      <div
+                        key={`${rowIndex}-${colIndex}`}
+                        onClick={() => handleSquareClick(rowIndex, colIndex)}
+                        className={`
+                          relative w-16 h-16 flex items-center justify-center text-4xl cursor-pointer transition-all duration-300 ease-out
+                          ${
+                            isLightSquare(rowIndex, colIndex) 
+                              ? 'bg-gradient-to-br from-amber-50 to-amber-100 hover:from-amber-100 hover:to-amber-200' 
+                              : 'bg-gradient-to-br from-amber-700 to-amber-800 hover:from-amber-600 hover:to-amber-700'
+                          }
+                          ${square.isSelected ? 'ring-4 ring-blue-400/70 ring-inset shadow-lg bg-gradient-to-br from-blue-200 to-blue-300' : ''}
+                          ${square.isValidMove ? 'ring-2 ring-green-400/60 ring-inset' : ''}
+                          hover:scale-105 hover:shadow-lg hover:z-10 relative
+                          border border-amber-200/30
+                        `}
+                        style={{
+                          transform: square.isSelected ? 'scale(1.05)' : 'scale(1)',
+                          boxShadow: square.isSelected ? '0 8px 25px rgba(59, 130, 246, 0.3)' : undefined
+                        }}
+                      >
+                        {square.piece && (
+                          <span className={`
+                            select-none transition-all duration-300 hover:scale-110 relative z-10
+                            ${square.piece.color === 'white' 
+                              ? 'text-white drop-shadow-[2px_2px_4px_rgba(0,0,0,0.8)] hover:drop-shadow-[3px_3px_6px_rgba(0,0,0,0.9)]' 
+                              : 'text-gray-900 drop-shadow-[2px_2px_4px_rgba(255,255,255,0.8)] hover:drop-shadow-[3px_3px_6px_rgba(255,255,255,0.9)]'
+                            }
+                            hover:brightness-110 filter
+                          `}
+                          style={{
+                            textShadow: square.piece.color === 'white' 
+                              ? '2px 2px 0px #000, -2px -2px 0px #000, 2px -2px 0px #000, -2px 2px 0px #000'
+                              : '1px 1px 0px #fff, -1px -1px 0px #fff, 1px -1px 0px #fff, -1px 1px 0px #fff'
+                          }}
+                        >
+                          {square.piece.symbol}
+                        </span>
+                        )}
+                        {/* Move Indicators */}
+                        {square.isValidMove && !square.piece && (
+                          <div className="absolute inset-0 flex items-center justify-center">
+                            <div className="w-5 h-5 bg-green-500/70 rounded-full border-2 border-green-400 shadow-lg animate-pulse"></div>
+                          </div>
+                        )}
+                        {square.isValidMove && square.piece && (
+                          <div className="absolute inset-0 rounded border-4 border-red-500/80 shadow-lg animate-pulse"></div>
+                        )}
+                      </div>
+                    ))
                   )}
-                  {square.isValidMove && square.piece && (
-                    <div className="absolute inset-0 border-4 border-destructive/70 rounded"></div>
-                  )}
-                  </div>
-                ))
-              )}
+                </div>
+              </div>
             </div>
           </div>
         </Card>
