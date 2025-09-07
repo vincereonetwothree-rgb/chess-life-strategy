@@ -312,8 +312,12 @@ export function ChessBoard() {
                 >
                    {square.piece && (
                     <span className={`
-                      select-none transition-all duration-200 hover:scale-110 drop-shadow-lg
-                      ${square.piece.color === 'white' ? 'text-white' : 'text-black'}
+                      select-none transition-all duration-200 hover:scale-110 font-black text-4xl
+                      ${square.piece.color === 'white' 
+                        ? 'text-white [text-shadow:2px_2px_4px_rgba(0,0,0,0.8),_0px_0px_8px_rgba(0,0,0,0.4)] filter drop-shadow-[0_4px_8px_rgba(0,0,0,0.6)]' 
+                        : 'text-gray-900 [text-shadow:2px_2px_4px_rgba(255,255,255,0.8),_-1px_-1px_2px_rgba(255,255,255,0.4)] filter drop-shadow-[0_4px_8px_rgba(0,0,0,0.3)]'
+                      }
+                      [text-stroke:1px_rgba(0,0,0,0.3)]
                     `}>
                       {square.piece.symbol}
                     </span>
