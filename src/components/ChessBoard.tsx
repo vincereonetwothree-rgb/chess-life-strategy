@@ -304,27 +304,27 @@ export function ChessBoard() {
                   onClick={() => handleSquareClick(rowIndex, colIndex)}
                   className={`
                     relative w-14 h-14 flex items-center justify-center text-3xl cursor-pointer transition-all duration-200
-                    ${isLightSquare(rowIndex, colIndex) ? 'bg-chess-light' : 'bg-chess-dark'}
-                    ${square.isSelected ? 'bg-chess-selected ring-2 ring-chess-highlight' : ''}
-                    ${square.isValidMove ? 'ring-2 ring-primary/50' : ''}
+                    ${isLightSquare(rowIndex, colIndex) ? 'bg-amber-50' : 'bg-amber-800'}
+                    ${square.isSelected ? 'bg-blue-300 ring-2 ring-blue-500' : ''}
+                    ${square.isValidMove ? 'ring-2 ring-green-500' : ''}
                     hover:brightness-110
                   `}
                 >
                    {square.piece && (
                     <span className={`
                       select-none transition-all duration-200 hover:scale-110 drop-shadow-lg
-                      ${square.piece.color === 'white' ? 'text-white filter brightness-110' : 'text-gray-800 filter drop-shadow-md'}
+                      ${square.piece.color === 'white' ? 'text-white' : 'text-black'}
                     `}>
                       {square.piece.symbol}
                     </span>
                    )}
                   {square.isValidMove && !square.piece && (
                     <div className="absolute inset-0 flex items-center justify-center">
-                      <div className="w-4 h-4 bg-primary/60 rounded-full"></div>
+                      <div className="w-4 h-4 bg-green-600 rounded-full"></div>
                     </div>
                   )}
                   {square.isValidMove && square.piece && (
-                    <div className="absolute inset-0 border-4 border-destructive/70 rounded"></div>
+                    <div className="absolute inset-0 border-4 border-red-600 rounded"></div>
                   )}
                 </div>
               ))
