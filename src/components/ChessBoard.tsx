@@ -286,48 +286,44 @@ export function ChessBoard() {
     <div className="flex flex-col lg:flex-row gap-6 max-w-6xl mx-auto p-4">
       {/* Chess Board */}
       <div className="flex-1">
-        <Card className="p-6 strategy-card">
+        <Card className="p-6 bg-[#2c2c2c] border-gray-600">
           <div className="mb-4">
-            <h2 className="text-xl font-bold mb-2">Strategic Decision Point</h2>
-            <p className="text-sm text-muted-foreground mb-2">
-              Current Turn: <span className={`font-semibold ${currentTurn === 'white' ? 'text-primary' : 'text-warning'}`}>
+            <h2 className="text-xl font-bold mb-2 text-white">Strategic Decision Point</h2>
+            <p className="text-sm text-gray-300 mb-2">
+              Current Turn: <span className={`font-semibold ${currentTurn === 'white' ? 'text-blue-400' : 'text-yellow-400'}`}>
                 {currentTurn === 'white' ? 'White (You)' : 'Black (AI)'}
               </span>
             </p>
           </div>
 
-          <div className="grid grid-cols-8 gap-0 bg-muted/20 p-4 rounded-lg max-w-lg mx-auto border-2 border-primary/20">
+          <div className="grid grid-cols-8 gap-0 max-w-lg mx-auto border border-gray-700">
             {board.map((row, rowIndex) =>
               row.map((square, colIndex) => (
                 <div
                   key={`${rowIndex}-${colIndex}`}
                   onClick={() => handleSquareClick(rowIndex, colIndex)}
                   className={`
-                    relative w-14 h-14 flex items-center justify-center text-3xl cursor-pointer transition-all duration-200
-                    ${isLightSquare(rowIndex, colIndex) ? 'bg-amber-50' : 'bg-amber-800'}
-                    ${square.isSelected ? 'bg-blue-300 ring-2 ring-blue-500' : ''}
+                    relative w-14 h-14 flex items-center justify-center text-3xl cursor-pointer
+                    ${isLightSquare(rowIndex, colIndex) ? 'bg-[#f0d9b5]' : 'bg-[#b58863]'}
+                    ${square.isSelected ? 'ring-2 ring-yellow-400' : ''}
                     ${square.isValidMove ? 'ring-2 ring-green-500' : ''}
-                    hover:brightness-110
                   `}
                 >
                    {square.piece && (
                     <span className={`
-                      select-none font-bold text-4xl transition-all duration-200 hover:scale-110
-                      ${square.piece.color === 'white' 
-                        ? 'text-white [text-shadow:0_0_0_#000,_1px_1px_0_#000,_-1px_-1px_0_#000,_1px_-1px_0_#000,_-1px_1px_0_#000,_2px_2px_0_#000,_-2px_-2px_0_#000,_2px_-2px_0_#000,_-2px_2px_0_#000] filter drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]' 
-                        : 'text-black filter drop-shadow-[0_2px_4px_rgba(0,0,0,0.5)]'
-                      }
+                      select-none text-4xl
+                      ${square.piece.color === 'white' ? 'text-white' : 'text-black'}
                     `}>
                       {square.piece.symbol}
                     </span>
                    )}
                   {square.isValidMove && !square.piece && (
                     <div className="absolute inset-0 flex items-center justify-center">
-                      <div className="w-4 h-4 bg-green-600 rounded-full"></div>
+                      <div className="w-3 h-3 bg-green-600 rounded-full opacity-70"></div>
                     </div>
                   )}
                   {square.isValidMove && square.piece && (
-                    <div className="absolute inset-0 border-4 border-red-600 rounded"></div>
+                    <div className="absolute inset-0 border-2 border-red-500 rounded-sm"></div>
                   )}
                 </div>
               ))
@@ -338,17 +334,17 @@ export function ChessBoard() {
 
       {/* Move Decision Card */}
       <div className="lg:w-80">
-        <Card className="p-6 bg-background border-border/50">
-          <h3 className="text-lg font-semibold mb-4 flex items-center text-foreground">
-            <Target className="w-5 h-5 mr-2 text-muted-foreground" />
+        <Card className="p-6 bg-[#2c2c2c] border-gray-600">
+          <h3 className="text-lg font-semibold mb-4 flex items-center text-white">
+            <Target className="w-5 h-5 mr-2 text-gray-400" />
             Strategic Analysis
           </h3>
           
           {currentMove ? (
             <div className="space-y-4">
               <div>
-                <h4 className="font-semibold text-foreground mb-2">{currentMove.title}</h4>
-                <p className="text-sm text-muted-foreground mb-3">{currentMove.description}</p>
+                <h4 className="font-semibold text-white mb-2">{currentMove.title}</h4>
+                <p className="text-sm text-gray-300 mb-3">{currentMove.description}</p>
                 
                 <div className="flex gap-2 mb-3">
                   <span className={`px-2 py-1 text-xs rounded ${getRiskColor(currentMove.riskLevel)} bg-current/10`}>
@@ -359,9 +355,9 @@ export function ChessBoard() {
                   </span>
                 </div>
                 
-                <div className="p-3 bg-muted/20 border border-border rounded-lg">
-                  <span className="text-xs font-medium text-foreground">Business Concept:</span>
-                  <p className="text-sm mt-1 text-muted-foreground">{currentMove.businessConcept}</p>
+                <div className="p-3 bg-gray-700 border border-gray-600 rounded-lg">
+                  <span className="text-xs font-medium text-white">Business Concept:</span>
+                  <p className="text-sm mt-1 text-gray-300">{currentMove.businessConcept}</p>
                 </div>
               </div>
               
@@ -376,15 +372,15 @@ export function ChessBoard() {
           ) : (
             <div className="space-y-4">
               <div className="text-center py-8">
-                <Lightbulb className="w-12 h-12 mx-auto text-muted-foreground mb-3" />
-                <p className="text-sm text-muted-foreground">
+                <Lightbulb className="w-12 h-12 mx-auto text-gray-400 mb-3" />
+                <p className="text-sm text-gray-300">
                   Select a piece and make a move to see the strategic analysis
                 </p>
               </div>
               
               <div className="space-y-2">
-                <h4 className="font-medium text-sm text-foreground">Quick Tips:</h4>
-                <ul className="text-xs text-muted-foreground space-y-1">
+                <h4 className="font-medium text-sm text-white">Quick Tips:</h4>
+                <ul className="text-xs text-gray-300 space-y-1">
                   <li>• Click your piece to see possible moves</li>
                   <li>• Each piece teaches different life strategies</li>
                   <li>• Small dots = safe moves</li>

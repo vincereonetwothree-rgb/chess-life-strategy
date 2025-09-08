@@ -48,9 +48,9 @@ All colors MUST be HSL.
     --input: 220 27% 12%;
     --ring: 180 100% 50%;
 
-    /* Chess board colors - Lichess inspired */
-    --chess-light: 42 39% 83%;  /* Cream/beige like Lichess */
-    --chess-dark: 25 42% 51%;   /* Medium brown like Lichess */
+    /* Chess board colors - Exact Lichess Alpha theme */
+    --chess-light: 42 39% 83%;  /* #f0d9b5 - Lichess light squares */
+    --chess-dark: 32 25% 56%;   /* #b58863 - Lichess dark squares */
     --chess-highlight: 60 100% 75%;  /* Light yellow for highlights */
     --chess-selected: 210 100% 70%; /* Light blue for selection */
 
