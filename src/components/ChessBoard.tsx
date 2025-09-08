@@ -39,16 +39,16 @@ const initialBoard: ChessSquare[][] = [
   ],
   Array(8).fill(0).map(() => ({ piece: { type: 'pawn', color: 'black', symbol: '♟' } })),
   ...Array(4).fill(0).map(() => Array(8).fill({})),
-  Array(8).fill(0).map(() => ({ piece: { type: 'pawn', color: 'white', symbol: '♙' } })),
+  Array(8).fill(0).map(() => ({ piece: { type: 'pawn', color: 'white', symbol: '♟︎' } })),
   [
-    { piece: { type: 'rook', color: 'white', symbol: '♖' } },
-    { piece: { type: 'knight', color: 'white', symbol: '♘' } },
-    { piece: { type: 'bishop', color: 'white', symbol: '♗' } },
-    { piece: { type: 'queen', color: 'white', symbol: '♕' } },
-    { piece: { type: 'king', color: 'white', symbol: '♔' } },
-    { piece: { type: 'bishop', color: 'white', symbol: '♗' } },
-    { piece: { type: 'knight', color: 'white', symbol: '♘' } },
-    { piece: { type: 'rook', color: 'white', symbol: '♖' } }
+    { piece: { type: 'rook', color: 'white', symbol: '♜' } },
+    { piece: { type: 'knight', color: 'white', symbol: '♞' } },
+    { piece: { type: 'bishop', color: 'white', symbol: '♝' } },
+    { piece: { type: 'queen', color: 'white', symbol: '♛' } },
+    { piece: { type: 'king', color: 'white', symbol: '♚' } },
+    { piece: { type: 'bishop', color: 'white', symbol: '♝' } },
+    { piece: { type: 'knight', color: 'white', symbol: '♞' } },
+    { piece: { type: 'rook', color: 'white', symbol: '♜' } }
   ]
 ];
 
@@ -312,12 +312,11 @@ export function ChessBoard() {
                 >
                    {square.piece && (
                     <span className={`
-                      select-none transition-all duration-200 hover:scale-110 font-black text-4xl
+                      select-none font-bold text-4xl transition-all duration-200 hover:scale-110
                       ${square.piece.color === 'white' 
-                        ? 'text-white [text-shadow:2px_2px_4px_rgba(0,0,0,0.8),_0px_0px_8px_rgba(0,0,0,0.4)] filter drop-shadow-[0_4px_8px_rgba(0,0,0,0.6)]' 
-                        : 'text-gray-900 [text-shadow:2px_2px_4px_rgba(255,255,255,0.8),_-1px_-1px_2px_rgba(255,255,255,0.4)] filter drop-shadow-[0_4px_8px_rgba(0,0,0,0.3)]'
+                        ? 'text-white [text-shadow:0_0_0_#000,_1px_1px_0_#000,_-1px_-1px_0_#000,_1px_-1px_0_#000,_-1px_1px_0_#000,_2px_2px_0_#000,_-2px_-2px_0_#000,_2px_-2px_0_#000,_-2px_2px_0_#000] filter drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]' 
+                        : 'text-black filter drop-shadow-[0_2px_4px_rgba(0,0,0,0.5)]'
                       }
-                      [text-stroke:1px_rgba(0,0,0,0.3)]
                     `}>
                       {square.piece.symbol}
                     </span>
