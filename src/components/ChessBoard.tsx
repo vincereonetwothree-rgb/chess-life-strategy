@@ -339,16 +339,16 @@ export function ChessBoard() {
 
       {/* Move Decision Card */}
       <div className="lg:w-80">
-        <Card className="p-6 strategy-card">
-          <h3 className="text-lg font-semibold mb-4 flex items-center">
-            <Target className="w-5 h-5 mr-2 text-primary" />
+        <Card className="p-6 bg-background border-border/50">
+          <h3 className="text-lg font-semibold mb-4 flex items-center text-foreground">
+            <Target className="w-5 h-5 mr-2 text-muted-foreground" />
             Strategic Analysis
           </h3>
           
           {currentMove ? (
             <div className="space-y-4">
               <div>
-                <h4 className="font-semibold text-primary mb-2">{currentMove.title}</h4>
+                <h4 className="font-semibold text-foreground mb-2">{currentMove.title}</h4>
                 <p className="text-sm text-muted-foreground mb-3">{currentMove.description}</p>
                 
                 <div className="flex gap-2 mb-3">
@@ -360,15 +360,15 @@ export function ChessBoard() {
                   </span>
                 </div>
                 
-                <div className="p-3 bg-primary/5 border border-primary/20 rounded-lg">
-                  <span className="text-xs font-medium text-primary">Business Concept:</span>
-                  <p className="text-sm mt-1">{currentMove.businessConcept}</p>
+                <div className="p-3 bg-muted/20 border border-border rounded-lg">
+                  <span className="text-xs font-medium text-foreground">Business Concept:</span>
+                  <p className="text-sm mt-1 text-muted-foreground">{currentMove.businessConcept}</p>
                 </div>
               </div>
               
               <Button 
                 variant="outline" 
-                className="w-full border-primary/30 hover:border-primary text-primary"
+                className="w-full"
                 onClick={() => setCurrentMove(null)}
               >
                 Continue Playing
@@ -384,11 +384,11 @@ export function ChessBoard() {
               </div>
               
               <div className="space-y-2">
-                <h4 className="font-medium text-sm">Quick Tips:</h4>
+                <h4 className="font-medium text-sm text-foreground">Quick Tips:</h4>
                 <ul className="text-xs text-muted-foreground space-y-1">
                   <li>• Click your piece to see possible moves</li>
                   <li>• Each piece teaches different life strategies</li>
-                  <li>• Green dots = safe moves</li>
+                  <li>• Small dots = safe moves</li>
                   <li>• Red borders = capture opportunities</li>
                 </ul>
               </div>

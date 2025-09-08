@@ -48,11 +48,11 @@ All colors MUST be HSL.
     --input: 220 27% 12%;
     --ring: 180 100% 50%;
 
-    /* Chess board colors */
-    --chess-light: 220 15% 25%;
-    --chess-dark: 220 27% 15%;
-    --chess-highlight: 180 100% 50%;
-    --chess-selected: 45 100% 60%;
+    /* Chess board colors - Lichess inspired */
+    --chess-light: 40 35% 85%;  /* Light tan/off-white */
+    --chess-dark: 25 40% 45%;   /* Rich dark brown */
+    --chess-highlight: 60 100% 75%;  /* Light yellow for highlights */
+    --chess-selected: 210 100% 70%; /* Light blue for selection */
 
     /* Strategic gradients */
     --gradient-primary: linear-gradient(135deg, hsl(180 100% 50%), hsl(180 100% 70%));
